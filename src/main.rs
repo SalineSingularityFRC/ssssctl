@@ -27,8 +27,12 @@ fn main() {
         }
     };
 
-    // BtSocket implements the  and  traits (they're blocking)
+    
+    // Data buf for IO
     let mut buffer = [0; 10];
+
+    // Read and write data over the connection
+    let num_bytes_written = socket.write(b"H3llo w0rld").unwrap();
     let num_bytes_read = match socket.read(&mut buffer[..]) {
         Ok(e) => e,
         Err(why) => {
@@ -36,11 +40,8 @@ fn main() {
             0
         }
     };
-    let num_bytes_written = socket.write(&buffer[0..num_bytes_read]).unwrap();
-    println!(
-        "Read {} bytes, wrote {} bytes",
-        num_bytes_read, num_bytes_written
-    );
+
+    println!("Read {} bytes, wrote {} bytes", num_bytes_read, num_bytes_written);
 
     // BtSocket also implements  for async IO
     let poll = Poll::new().unwrap();
