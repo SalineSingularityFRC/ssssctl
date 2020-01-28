@@ -72,7 +72,7 @@ fn main() {
 
     println!("Read {} bytes, wrote {} bytes", num_bytes_read, num_bytes_written);
 
-    // BtSocket also implements  for async IO
+    // Asnyc IO for BtSocket 
     let poll = Poll::new().expect("Failed to create poll");
     match poll.register(
         &socket,
