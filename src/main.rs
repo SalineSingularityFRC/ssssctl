@@ -10,21 +10,34 @@ use std::{
 fn main() {
     let args: Vec<String> = env::args().collect();
     if args.len() < 4 {
-        println!("Usage: btd <name> <address> <file>");
+        eprintln!("Usage: btd <name> <address> <file>");
         std::process::exit(1);
     }
 
     let name = &args[1];
-    let device = BtDevice::new(name.to_string(), BtAddr::from_str(&args[2]).expect("Failed to convert arg to MAC addr"));
+    let device = BtDevice::new(name.to_string(), match BtAddr::from_str(&args[2]) {
+        Ok(e) => e,
+        Err(why) => {
+            eprintln!("Error parsing MAC addr: {:#?}", why);
+            return;
+        }
+    });
 
     println!("Connecting to \"{}\" ({})", device.name, device.addr.to_string());
 
     // create and connect the RFCOMM socket
-    let mut socket = BtSocket::new(BtProtocol::RFCOMM).expect("Failed to make bluetooth socket");
+    let mut socket = match BtSocket::new(BtProtocol::RFCOMM) {
+        Ok(e) => e,
+        Err(why) => {
+            eprintln!("Failed to connect to BtSocket: {}", why);
+            std::process::exit(1);
+        }
+    };
+
     match socket.connect(device.addr) {
         Ok(_) => {},
         Err(why) => {
-            println!("Got error {}", why);
+            eprintln!("Failed to connect to {}: {}", device.addr.to_string(), why);
             std::process::exit(1);
         }
     };
@@ -32,7 +45,7 @@ fn main() {
     let bytes = match fs::read(Path::new(&args[3])) {
         Ok(d) => d,
         Err(why) => {
-            println!("Error reading file...{}", why);
+            eprintln!("Error reading file...{}", why);
             std::process::exit(1);
         }
     };
@@ -41,23 +54,36 @@ fn main() {
     let mut buffer = [0; 10];
 
     // Read and write data over the connection
-    let num_bytes_written = socket.write(&bytes[..]).unwrap();
-    let num_bytes_read = match socket.read(&mut buffer[..]) {
+    let num_bytes_written = match socket.write(&bytes[..]) {
         Ok(e) => e,
         Err(why) => {
-            println!("Got error {}", why);
-            0
+            eprintln!("Error writing bytes over socket: {}", why);
+            std::process::exit(1);
+        }
+    };
+
+    let num_bytes_read = match socket.read(&mut buffer[..]) {
+        Ok(e) => e,
+        // If this fails, don't panic, just return 0 and print an err
+        Err(why) => {
+            eprintln!("Failed to read from socket; continuing {}", why); 0
         }
     };
 
     println!("Read {} bytes, wrote {} bytes", num_bytes_read, num_bytes_written);
 
     // BtSocket also implements  for async IO
-    let poll = Poll::new().unwrap();
-    poll.register(
+    let poll = Poll::new().expect("Failed to create poll");
+    match poll.register(
         &socket,
         Token(0),
         Ready::readable() | Ready::writable(),
         PollOpt::edge() | PollOpt::oneshot(),
-    ).unwrap();
+    ) {
+        Ok(_) => {},
+        Err(why) => {
+            eprintln!("Failed to register: {}", why);
+            std::process::exit(1);
+        }
+    };
 }
