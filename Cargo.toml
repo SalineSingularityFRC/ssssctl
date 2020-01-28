@@ -1,6 +1,6 @@
 [package]
-name = "btd"
-version = "0.1.0"
+name = "ssssctl"
+version = "0.0.2"
 authors = ["Skye Bleed <monarrk@aaathats3as.com>"]
 edition = "2018"
 

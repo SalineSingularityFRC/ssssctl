@@ -31,14 +31,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "btd"
-version = "0.1.0"
-dependencies = [
- "bluetooth-serial-port",
- "mio",
-]
-
-[[package]]
 name = "cfg-if"
 version = "0.1.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -197,6 +189,14 @@ name = "slab"
 version = "0.4.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c111b5bd5695e56cffe5129854aa230b39c93a305372fdbb2668ca2394eea9f8"
+
+[[package]]
+name = "ssssctl"
+version = "0.0.2"
+dependencies = [
+ "bluetooth-serial-port",
+ "mio",
+]
 
 [[package]]
 name = "void"

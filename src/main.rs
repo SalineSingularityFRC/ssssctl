@@ -10,7 +10,7 @@ use std::{
 fn main() {
     let args: Vec<String> = env::args().collect();
     if args.len() < 4 {
-        eprintln!("Usage: btd <name> <address> <file>");
+        eprintln!("Usage: ssssctl <name> <address> <file>");
         std::process::exit(1);
     }
 
