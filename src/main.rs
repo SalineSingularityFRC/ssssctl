@@ -1,6 +1,10 @@
+mod err;
+
 use std::env;
 use std::fs;
 use std::path::Path;
+use err::handle;
+use err::err;
 use bluetooth_serial_port::{BtProtocol, BtSocket, BtDevice, BtAddr};
 use mio::{Poll, PollOpt, Ready, Token};
 use std::{
@@ -10,45 +14,20 @@ use std::{
 fn main() {
     let args: Vec<String> = env::args().collect();
     if args.len() < 4 {
-        eprintln!("Usage: ssssctl <name> <address> <file>");
-        std::process::exit(1);
+        err("Usage: ssssctl <name> <address> <file>", 1);
     }
 
     let name = &args[1];
-    let device = BtDevice::new(name.to_string(), match BtAddr::from_str(&args[2]) {
-        Ok(e) => e,
-        Err(why) => {
-            eprintln!("Error parsing MAC addr: {:#?}", why);
-            return;
-        }
-    });
+    let device = BtDevice::new(name.to_string(), handle(BtAddr::from_str(&args[2]), "Failed to parse MAC address"));
 
     println!("Connecting to \"{}\" ({})", device.name, device.addr.to_string());
 
     // create and connect the RFCOMM socket
-    let mut socket = match BtSocket::new(BtProtocol::RFCOMM) {
-        Ok(e) => e,
-        Err(why) => {
-            eprintln!("Failed to connect to BtSocket: {}", why);
-            std::process::exit(1);
-        }
-    };
+    let mut socket = handle(BtSocket::new(BtProtocol::RFCOMM), "Failed to create new bluetooth socket");
 
-    match socket.connect(device.addr) {
-        Ok(_) => {},
-        Err(why) => {
-            eprintln!("Failed to connect to {}: {}", device.addr.to_string(), why);
-            std::process::exit(1);
-        }
-    };
+    handle(socket.connect(device.addr), format!("Failed to connect to {}", device.addr.to_string()).as_str());
 
-    let bytes = match fs::read(Path::new(&args[3])) {
-        Ok(d) => d,
-        Err(why) => {
-            eprintln!("Error reading file...{}", why);
-            std::process::exit(1);
-        }
-    };
+    let bytes = handle(fs::read(Path::new(&args[3])), "Error reading file");
     
     // Data buf for IO
     let mut buffer = [0; 10];
