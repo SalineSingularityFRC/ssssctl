@@ -1,4 +1,6 @@
 use std::env;
+use std::fs;
+use std::path::Path;
 use bluetooth_serial_port::{BtProtocol, BtSocket, BtDevice, BtAddr};
 use mio::{Poll, PollOpt, Ready, Token};
 use std::{
@@ -7,8 +9,8 @@ use std::{
 
 fn main() {
     let args: Vec<String> = env::args().collect();
-    if args.len() < 3 {
-        println!("Usage: btd <name> <address>");
+    if args.len() < 4 {
+        println!("Usage: btd <name> <address> <file>");
         std::process::exit(1);
     }
 
@@ -27,12 +29,19 @@ fn main() {
         }
     };
 
+    let bytes = match fs::read(Path::new(&args[3])) {
+        Ok(d) => d,
+        Err(why) => {
+            println!("Error reading file...{}", why);
+            std::process::exit(1);
+        }
+    };
     
     // Data buf for IO
     let mut buffer = [0; 10];
 
     // Read and write data over the connection
-    let num_bytes_written = socket.write(b"H3llo w0rld").unwrap();
+    let num_bytes_written = socket.write(&bytes[..]).unwrap();
     let num_bytes_read = match socket.read(&mut buffer[..]) {
         Ok(e) => e,
         Err(why) => {
