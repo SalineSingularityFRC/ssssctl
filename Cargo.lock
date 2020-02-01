@@ -195,7 +195,6 @@ name = "ssssctl"
 version = "0.0.2"
 dependencies = [
  "bluetooth-serial-port",
- "mio",
 ]
 
 [[package]]
